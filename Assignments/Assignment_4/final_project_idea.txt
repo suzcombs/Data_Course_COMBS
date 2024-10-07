@@ -1,0 +1,10 @@
+My idea for my data analysis final project is to analyze the effects of various factors on sleep quality. These factors could include gender, weight, bedtime, occupation, sleep duration, stress level, heart rate, etc.
+
+In my search for datasets on this topic, I found the following potential sources:
+
+https://github.com/nileshely/Sleep-Efficiency/blob/main/Sleep_Efficiency.csv
+
+https://github.com/OludolapoAnalyst/Sleep-and-Lifestyle-Dataset/blob/main/Sleep_health_and_lifestyle_dataset.csv
+
+https://www.kaggle.com/datasets/uom190346a/sleep-health-and-lifestyle-dataset
+
