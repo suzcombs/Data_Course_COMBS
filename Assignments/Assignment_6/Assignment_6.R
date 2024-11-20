@@ -1,6 +1,9 @@
 ### Assignment 6 ###
 library(tidyverse)
 library(janitor)
+library(gganimate)
+library(dplyr)
+library(ggplot2)
 
 # Import the untidy data set
 dat <- read_csv("../../Data/BioLog_Plate_Data.csv")
@@ -21,19 +24,35 @@ dat_long <- dat_long %>%
                                  sample_id %in% c("Soil_1", "Soil_2") ~ "Soil"))
 
 # 3. Generate a plot matching the one shown in the assignment
+dat_long$type <- as.factor(dat_long$type)
+dat_long$substrate <- as.factor(dat_long$substrate)
+
 dat_long %>% 
   ggplot(aes(x = time, y = absorbance, color = type)) +
-  geom_smooth(se=FALSE) +
+  geom_smooth(method = "loess", formula = y ~ x, se=FALSE) +
   facet_wrap(~substrate) +
   theme_minimal() +
   theme(
-    plot.background = element_rect(fill = "white", color = NA) # My png was coming out with a gray background, so I needed a white fill.
-  )
+    plot.background = element_rect(fill = "white", color = NA)) # My png was coming out with a gray background, so I needed a white fill.
 
 # Save as a .png
 ggsave("./absorbance_over_hr_plot.png", width = 12, height = 6, dpi = 300)
 
-
 # Animated plot that matches the one in the assignment
-mean_abs <- dat_long %>% 
-  mutate(mean_absorbance = mean(absorbance))
+dat_long_mean <- dat_long %>% 
+  filter(substrate == "Itaconic Acid") %>% 
+  group_by(sample_id, dilution, substrate, time, type) %>% 
+  summarize(mean_absorbance = mean(absorbance, na.rm = TRUE))
+
+dat_long_mean %>% 
+  ggplot(aes(x = time, y = mean_absorbance, color = sample_id, 
+             group = sample_id)) + 
+  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + 
+  facet_wrap(~dilution) + 
+  theme_minimal() + 
+  theme( plot.background = element_rect(fill = "white", color = NA) # Ensures white background 
+         )
+
+# I can't get the animation to work
+# Gives: Error in rep(self$default, ncol(d)) : invalid 'times' argument
+ggsave("./itaconic_acid.png", width = 12, height = 6, dpi = 300)
