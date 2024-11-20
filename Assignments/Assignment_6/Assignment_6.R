@@ -47,7 +47,7 @@ dat_long_mean <- dat_long %>%
 dat_long_mean %>% 
   ggplot(aes(x = time, y = mean_absorbance, color = sample_id, 
              group = sample_id)) + 
-  geom_smooth(method = "lm", formula = y ~ x, se = FALSE) + 
+  geom_smooth(formula = y ~ x, se = FALSE) + 
   facet_wrap(~dilution) + 
   theme_minimal() + 
   theme( plot.background = element_rect(fill = "white", color = NA) # Ensures white background 
