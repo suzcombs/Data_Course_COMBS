@@ -93,9 +93,6 @@ religiosity %>%
 # Look for correlations between certain religious groups and non-religious people
 religions = names(utah)[-c(1:4)]
 
-new <- utah %>%
-  pivot_longer(names_to = "Religion", values_to = "Proportion",religions)
-
 utah %>%
   pivot_longer(names_to = "Religion", values_to = "Proportion",religions) %>%
   ggplot(aes(x=Proportion,y=Religious)) + geom_point() + geom_smooth(method="lm") + lims(y=c(0,1)) +
@@ -110,10 +107,11 @@ utah %>%
       # Positive Relationship
 
 # 3.  What can you say about the relationships shown here?
-      # LDS 
+      # The points on the LDS plot is much tighter for all proportions in comparison to the other religions. There is also
+      # a steep slope. 
 
 # 4.  Examine the axis scales. How could you modify the code above to more accurately portray values on an "equal footing?"
-      # It currently has free scales, but if you wanted to show exactly how they compare, then you could have the scales be fixed.
+      # It currently has free scales, but if you wanted to show exactly how they compare, then you could have the scales fixed.
 
 # UPLOAD YOUR ANSWERS TO CANVAS
 # DON'T FORGET TO PUSH YOUR TIDY CODE TO GITHUB AS WELL!
