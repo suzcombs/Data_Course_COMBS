@@ -17,14 +17,19 @@ library(tidyverse)
 utah = read.csv("./Utah_Religions_by_County.csv")
 
 # subset to only counties with buddhists observed
-buddhist = utah[utah$Buddhism.Mahayana > 0,]
+# Original: buddhist = utah[utah$Buddhism.Mahayana > 0,]
+buddhist <- utah %>% 
+  filter(Buddhism.Mahayana > 0) 
 
 # order rows by population (descending)
-buddhist = buddhist[order(buddhist$Pop_2010, decreasing = TRUE),]
+# Original: buddhist = buddhist[order(buddhist$Pop_2010, decreasing = TRUE),]
+buddhist <- buddhist %>% 
+  arrange(desc(Pop_2010))
 
 
 # write this new dataframe to a file
-write.csv(buddhist, file = "./buddhist_counties.csv", row.names = FALSE, quote = FALSE)
+# Original: write.csv(buddhist, file = "./buddhist_counties.csv", row.names = FALSE, quote = FALSE)
+write_csv(buddhist, "./buddhist_counties.csv")
 
 ## get group summaries of religiousity based on population ##
 
@@ -34,43 +39,48 @@ groups = kmeans(utah$Pop_2010,6) # clusters data into 6 groups based on proximit
 utah$Pop.Group = groups$cluster # assigns a new variable to utah giving group for each county
 
 # subset to each group and find summary stats on Religiosity for each
-group1 = mean(utah[utah$Pop.Group == 1,]$Religious)
-group2 = mean(utah[utah$Pop.Group == 2,]$Religious)
-group3 = mean(utah[utah$Pop.Group == 3,]$Religious)
-group4 = mean(utah[utah$Pop.Group == 4,]$Religious)
-group5 = mean(utah[utah$Pop.Group == 5,]$Religious)
-group6 = mean(utah[utah$Pop.Group == 6,]$Religious)
+# Original: group1 = mean(utah[utah$Pop.Group == 1,]$Religious)
+# Original: group2 = mean(utah[utah$Pop.Group == 2,]$Religious)
+# Original: group3 = mean(utah[utah$Pop.Group == 3,]$Religious)
+# Original: group4 = mean(utah[utah$Pop.Group == 4,]$Religious)
+# Original: group5 = mean(utah[utah$Pop.Group == 5,]$Religious)
+# Original: group6 = mean(utah[utah$Pop.Group == 6,]$Religious)
+# New: Doing it down in next section all together.
 
 # same, but mean population
-group1.pop = mean(utah[utah$Pop.Group == 1,]$Pop_2010)
-group2.pop = mean(utah[utah$Pop.Group == 2,]$Pop_2010)
-group3.pop = mean(utah[utah$Pop.Group == 3,]$Pop_2010)
-group4.pop = mean(utah[utah$Pop.Group == 4,]$Pop_2010)
-group5.pop = mean(utah[utah$Pop.Group == 5,]$Pop_2010)
-group6.pop = mean(utah[utah$Pop.Group == 6,]$Pop_2010)
-
+# Original: group1.pop = mean(utah[utah$Pop.Group == 1,]$Pop_2010)
+# Original: group2.pop = mean(utah[utah$Pop.Group == 2,]$Pop_2010)
+# Original: group3.pop = mean(utah[utah$Pop.Group == 3,]$Pop_2010)
+# Original: group4.pop = mean(utah[utah$Pop.Group == 4,]$Pop_2010)
+# Original: group5.pop = mean(utah[utah$Pop.Group == 5,]$Pop_2010)
+# Original: group6.pop = mean(utah[utah$Pop.Group == 6,]$Pop_2010)
+# New: Doing it down in next section all together.
 
 # make data frame of each group and mean religiosity
-religiosity = data.frame(Pop.Group = c("group1","group2","group3","group4","group5","group6"),
-           Mean.Religiosity = c(group1,group2,group3,group4,group5,group6),
-           Mean.Pop = c(group1.pop,group2.pop,group3.pop,group4.pop,group5.pop,group6.pop))
-
-
+# Original: religiosity = data.frame(Pop.Group = c("group1","group2","group3","group4","group5","group6"),
+           # Mean.Religiosity = c(group1,group2,group3,group4,group5,group6),
+           # Mean.Pop = c(group1.pop,group2.pop,group3.pop,group4.pop,group5.pop,group6.pop))
+religiosity <- utah %>% 
+  group_by(Pop.Group) %>% 
+  summarize(Mean.Religiosity = mean(Religious),
+            Mean.Pop = mean(Pop_2010))
 
 
 religiosity # take quick look at resulting table
 
 # order by decreasing population
-religiosity = religiosity[order(religiosity$Mean.Pop, decreasing = TRUE),]
-
+# Original: religiosity = religiosity[order(religiosity$Mean.Pop, decreasing = TRUE),]
+religiosity <- religiosity %>% 
+  arrange(desc(Mean.Pop))
 
 religiosity # take quick look at resulting table
 
 
 # plot that table (redo this using ggplot)
-plot(x=religiosity$Mean.Pop,y=religiosity$Mean.Religiosity)
-
-
+# Original: plot(x=religiosity$Mean.Pop,y=religiosity$Mean.Religiosity)
+religiosity %>% 
+  ggplot(aes(x=Mean.Pop, y=Mean.Religiosity)) +
+  geom_point()
 
 
 #####################################
@@ -83,6 +93,9 @@ plot(x=religiosity$Mean.Pop,y=religiosity$Mean.Religiosity)
 # Look for correlations between certain religious groups and non-religious people
 religions = names(utah)[-c(1:4)]
 
+new <- utah %>%
+  pivot_longer(names_to = "Religion", values_to = "Proportion",religions)
+
 utah %>%
   pivot_longer(names_to = "Religion", values_to = "Proportion",religions) %>%
   ggplot(aes(x=Proportion,y=Religious)) + geom_point() + geom_smooth(method="lm") + lims(y=c(0,1)) +
@@ -91,9 +104,16 @@ utah %>%
 
 # Look through those plots and answer the following questions:
 # 1.  Which religious group correlates most strongly in a given area with the proportion of non-religious people?
+      # LDS
+
 # 2.  What is the direction of that correlation?
+      # Positive Relationship
+
 # 3.  What can you say about the relationships shown here?
+      # LDS 
+
 # 4.  Examine the axis scales. How could you modify the code above to more accurately portray values on an "equal footing?"
+      # It currently has free scales, but if you wanted to show exactly how they compare, then you could have the scales be fixed.
 
 # UPLOAD YOUR ANSWERS TO CANVAS
 # DON'T FORGET TO PUSH YOUR TIDY CODE TO GITHUB AS WELL!
