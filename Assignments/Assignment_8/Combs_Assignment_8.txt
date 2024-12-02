@@ -1,0 +1,16 @@
+1. Are any of your predicted response values from your best model scientifically meaningless? Explain.
+
+There were some predicted response values from my model 5 that were scientifically meaningless. These values were HumidityLow:Light, Light:SpeciesP.ostreotus, and HumidityLow:Light:speciesP.ostreotus. The statistical test indicates that there is minimal growth where these interactions take place.
+
+2. In your plots, did you find any non-linear relationships? Do a bit of research online and give a link to at least one resource explaining how to deal with modeling non-linear relationships in R. 
+
+The relationship between nitrogen on growth rate appears to be non-linear. The growth rate increased until nitrogen hit 20 and then it started decreasing. A resource I found about how to deal with this is https://www.geeksforgeeks.org/non-linear-regression-in-r/. On this site, they said that you can use different packages to perform non-linear regression. Some of these are "pls", "nlme" and "mccv". 
+
+3. Write the code you would use to model the data found in “/Data/non_linear_relationship.csv” with a linear model (there are a few ways of doing this)
+
+# Load the data
+df <- read_csv("/Data/non_linear_relationship.csv")
+
+# Linear Model
+modnl <- lm(formula = response ~ poly(predictor, 2), data = df)
+summary(modnl)
