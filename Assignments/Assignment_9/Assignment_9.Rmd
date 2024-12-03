@@ -4,7 +4,7 @@ author: "Suzanne Combs"
 output: 
   html_document:
     code_folding: hide
-date: "November 30, 2024"
+date: "December 2, 2024"
 ---
 
 
@@ -18,85 +18,102 @@ library(easystats)
 library(patchwork)
 ```
 <br></br>
+*The codes are included, but hidden. To view the code click the "show" button
+<br></br>
 <br></br>
 For assignment 9, my task is to:
 
 * Use the data set “/Data/GradSchool_Admissions.csv”
 
-* You will explore and model the predictors of graduate school admission
+* Explore and model the predictors of graduate school admission
 
---the “admit” column is coded as 1=success and 0=failure (that’s binary, so model appropriately)
+* Document data explorations, figures, and conclusions in a reproducible R-markdown report
 
---the other columns are the GRE score, the GPA, and the rank of the undergraduate institution, where I is “top-tier.”
-
-* Document your data explorations, figures, and conclusions in a reproducible R-markdown report
-
-* That means I want to see, in your html report, your process of model evaluation and selection. Here’s an example
 <br></br>
-<br></br>
-I first will load the data set. 
+I'll first load the data set. 
 ```{r, message=FALSE}
 ## Use the data set "/Data/GradSchool_Admissions.csv" ####
 # Load in the dataset
 df <- read_csv("../../Data/GradSchool_Admissions.csv")
 ```
-Then clean it up. To clean the data set, I changed admit to logical since
-it is true and false. I changed rank to factor since there are 4 different level options only.
+<br></br>
+Then clean it up. To clean the data set, I will change "admit" to a logical because it can either be true or false. I will also change "rank" to a factor since there are only 4 different level options.
+<br></br>
 ```{r}
 # Clean the dataset. Changing the variable types
 df$admit <- as.logical(df$admit)
 df$rank <- as.factor(df$rank)
 ```
+<br></br>
 Next, I will explore the data
+<br></br>
 ```{r}
 glimpse(df)
 ```
-I also looked at ggpairs for a quick look at different combinations
+<br></br>
+and view different plots using ggpairs for a quick look
+<br></br>
 ```{r, message=FALSE}
-# Look at different combinations for looking for a quick look
 ggpairs(df)
 ```
-
-There seems to be differences between the different school ranks and the chance of getting admitted
-and a little correlation between gre and gpa for admittance. So I will look into that more, especially rank.
 <br></br>
 <br></br>
-
-To help visualize more what the data is doing, I will do a few plots
+There seems to be differences between the chance of being admitted between schools of different ranks. This is one of the things I will look at more in my visualization.
+<br></br>
+<br></br>
 ```{r}
-# Plotting density for admittance
-p1 <- ggplot(df, aes(x=admit, fill=rank)) +
-  geom_density(alpha=.5) +
+# Boxplots
+p1 <- ggplot(df, aes(y=admit, x=gre, fill=rank)) +
+  geom_boxplot() +
+    labs(title = "Admittance based on GRE")
+
+p2 <- ggplot(df, aes(y=admit, x=gpa, fill=rank)) +
+  geom_boxplot() +
+  labs(title = "Admittance based on GPA")
+
+# Jitter Scatterplots
+p3 <- ggplot(df, aes(y=admit, x=gre, color=rank)) +
+  geom_jitter() +
   theme_minimal() +
-  labs(title = "Density plot for admittance")
+  labs(title = "Admittance based on gre")
 
-p2 <- ggplot(df, aes(y=gre, x=admit, fill=rank)) +
-  geom_boxplot() +
-    labs(title = "Boxplot for gre on admittance")
-
-p3 <- ggplot(df, aes(y=gpa, x=admit, fill=rank)) +
-  geom_boxplot() +
-  labs(title = "Boxplot for gpa on admittance")
-
-p1 + p2/p3
+p4 <- ggplot(df, aes(y=admit, x=gpa, color=rank)) +
+  geom_jitter() +
+  theme_minimal() +
+  labs(title = "Admittance based on gpa")
+p1 + p2
+p3 + p4
 ```
 <br></br>
 <br></br>
-Potential models
+It is difficult to tell if rank, gre, and gpa effects admittance rates based on these plots. I am going to create three different models to see what is significant.
+
+<br></br>
+Model 1
 ```{r}
 # Models
 mod1 <- glm(data=df, formula = admit ~ gpa:gre + rank, family = "binomial")
 summary(mod1)
-
+```
+From this model, the interaction between gpa and gre appear to be significant. Rank also seems to be significant, although rank2 is less significant than the other ranks.
+<br></br>
+Model 2
+```{r}
 mod2 <- glm(data=df, formula = admit ~ gpa + gre + rank, family = "binomial")
 summary(mod2)
-
+```
+This model, rank3 and rank4 are significant and gpa, gre, and rank2 are less significant. 
+<br></br>
+Model 3
+```{r}
 mod3 <- glm(data=df, formula = admit ~ gpa * gre * rank, family = "binomial")
 summary(mod3)
 ```
+This model only shows to be slightly significant for some of the variables.
+<br></br>
 Now that I have created 3 models, I can compare the models to see which would work best.
-
-I can compare performance
+<br></br>
+Comparing performance
 ```{r}
 # Models
 # Compare the performance
@@ -111,7 +128,7 @@ comps %>%
   plot()
 ```
 
-And look at the Mean Residuals (Look for exact name from other assignment)
+And look at the mean-squared-error for each model
 
 Model 1:
 ```{r}
@@ -135,19 +152,19 @@ Model 1 had a performance score of 66.67% while Model 2 was 49.69% and Model 3 w
 The mean residuals were very similar for model 1 and model 3, but model 1 is a less complicated model than model 3.
 <br></br>
 <br></br>
-Add predictions from mod1 to a new dataframe
+I will add predictions from mod1 to a new dataframe
 ```{r}
 # Add predictions from mod1 to a new dataframe
 df2 <- add_predictions(df, mod1, type="response")
 ```
 
-Plots comparing gre and gpa on admittance
-```{r}
+and create plots comparing gre and gpa on admittance
+```{r, message=FALSE}
 # Predict with model 1 how gre effects admittance
 p1 <- ggplot(df2, aes(x=gre, y=pred, color=rank)) + # As gre goes up, the probability goes up
   geom_point() +
   geom_smooth(se=FALSE, method="lm") +
-  labs(title="Probability of admittance based on GRE score",
+  labs(title="Admittance based on GRE",
        x="GRE",
        y="Prediction")
 
@@ -155,11 +172,11 @@ p1 <- ggplot(df2, aes(x=gre, y=pred, color=rank)) + # As gre goes up, the probab
 p2 <- ggplot(df2, aes(x=gpa, y=pred, color=rank)) + # As gpa goes up, the probability goes up
   geom_point() +
   geom_smooth(se=FALSE, method="lm") +
-  labs(title="Probability of admittance based on GPA score",
+  labs(title="Admittance based on GPA",
        x="GPA",
        y="Prediction")
 
 p1 + p2
 ```
-
-Here is where I would talk about what I am seeing in these plots
+<br></br>
+From these predictions, it looks like the higher your GRE and GPA the more likely it is to be admitted. Also having a rank 1 school gives you the best chance to be admitted.
