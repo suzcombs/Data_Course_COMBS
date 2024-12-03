@@ -1,44 +1,165 @@
 ---
+title: "Assignment 9"
+author: "Suzanne Combs"
 output: 
-html_document:
-  number_sections=TRUE
-pagetitle: Assignment_9
+  html_document:
+    code_folding: hide
+date: "November 30, 2024"
 ---
 
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+## Load in packages ####
+library(tidyverse)
+library(GGally)
+library(modelr)
+library(easystats)
+library(patchwork)
+```
+<br></br>
+<br></br>
+For assignment 9, my task is to:
+
+* Use the data set “/Data/GradSchool_Admissions.csv”
+
+* You will explore and model the predictors of graduate school admission
+
+--the “admit” column is coded as 1=success and 0=failure (that’s binary, so model appropriately)
+
+--the other columns are the GRE score, the GPA, and the rank of the undergraduate institution, where I is “top-tier.”
+
+* Document your data explorations, figures, and conclusions in a reproducible R-markdown report
+
+* That means I want to see, in your html report, your process of model evaluation and selection. Here’s an example
+<br></br>
+<br></br>
+I first will load the data set. 
+```{r, message=FALSE}
+## Use the data set "/Data/GradSchool_Admissions.csv" ####
+# Load in the dataset
+df <- read_csv("../../Data/GradSchool_Admissions.csv")
+```
+Then clean it up. To clean the data set, I changed admit to logical since
+it is true and false. I changed rank to factor since there are 4 different level options only.
+```{r}
+# Clean the dataset. Changing the variable types
+df$admit <- as.logical(df$admit)
+df$rank <- as.factor(df$rank)
+```
+Next, I will explore the data
+```{r}
+glimpse(df)
+```
+I also looked at ggpairs for a quick look at different combinations
+```{r, message=FALSE}
+# Look at different combinations for looking for a quick look
+ggpairs(df)
 ```
 
-# **Assignment 9**
+There seems to be differences between the different school ranks and the chance of getting admitted
+and a little correlation between gre and gpa for admittance. So I will look into that more, especially rank.
+<br></br>
+<br></br>
 
-In this assignment, you will use R (within R-Studio) to:
-  
-+ Load and clean a real data set
-+ Conduct exploratory analyses, including informative figures
-+ Build and test appropriate models
-+ Draw conclusions about your data
-+ Combine all of the above into a well-documented R-Markdown report and export (knit) it into an HTML file
+To help visualize more what the data is doing, I will do a few plots
+```{r}
+# Plotting density for admittance
+p1 <- ggplot(df, aes(x=admit, fill=rank)) +
+  geom_density(alpha=.5) +
+  theme_minimal() +
+  labs(title = "Density plot for admittance")
 
-**All file paths should be relative, starting from *your* Assignment_9 directory!!**
+p2 <- ggplot(df, aes(y=gre, x=admit, fill=rank)) +
+  geom_boxplot() +
+    labs(title = "Boxplot for gre on admittance")
 
-**This means that you need to create a new R-Project named "Assignment_9.Rproj" in your Assignment_9 directory, and work from scripts within that.**
+p3 <- ggplot(df, aes(y=gpa, x=admit, fill=rank)) +
+  geom_boxplot() +
+  labs(title = "Boxplot for gpa on admittance")
 
+p1 + p2/p3
+```
+<br></br>
+<br></br>
+Potential models
+```{r}
+# Models
+mod1 <- glm(data=df, formula = admit ~ gpa:gre + rank, family = "binomial")
+summary(mod1)
 
-## **For credit...**
+mod2 <- glm(data=df, formula = admit ~ gpa + gre + rank, family = "binomial")
+summary(mod2)
 
-1.  Push a completed version of your Rproj and R-markdown file (details at end of this assignment) to GitHub
-2.  Your score will also depend on your analyses and presentation of your final report
+mod3 <- glm(data=df, formula = admit ~ gpa * gre * rank, family = "binomial")
+summary(mod3)
+```
+Now that I have created 3 models, I can compare the models to see which would work best.
 
-____________
+I can compare performance
+```{r}
+# Models
+# Compare the performance
+comps <- compare_performance(mod1, mod2, mod3, rank=TRUE)
+comps
+```
 
-# Your tasks:
+Plot the comparisons
+```{r}
+# Plot the comparisons
+comps %>% 
+  plot()
+```
 
-+ Use the data set "/Data/GradSchool_Admissions.csv"
-+ You will explore and model the predictors of graduate school admission
-  - the "admit" column is coded as 1=success and 0=failure (that's binary, so model appropriately)
-  - the other columns are the GRE score, the GPA, and the rank of the undergraduate institution, where I is "top-tier."
-+ Document your data explorations, figures, and conclusions in a reproducible R-markdown report
-+ That means I want to see, in your html report, your process of model evaluation and selection. Here's an [example](https://gzahn.github.io/data-course/Repository/Assignments/Assignment_9/example.html){target="_blank"}
-+ Upload your **self-contained** R project, including knitted HTML report, to GitHub in *your* Assignment_9 directory
+And look at the Mean Residuals (Look for exact name from other assignment)
 
+Model 1:
+```{r}
+# Mean Residuals (Look for exact name from other assignment)
+mean(mod1$residuals^2)
+```
+
+Model 2:
+```{r}
+mean(mod2$residuals^2)
+```
+
+Model 3:
+```{r}
+mean(mod3$residuals^2)
+```
+
+With all these comparisons to consider, I am going to choose model 1 because it has a much higher performance score than model 2 or model 3. 
+Model 1 had a performance score of 66.67% while Model 2 was 49.69% and Model 3 was 42.19%.
+
+The mean residuals were very similar for model 1 and model 3, but model 1 is a less complicated model than model 3.
+<br></br>
+<br></br>
+Add predictions from mod1 to a new dataframe
+```{r}
+# Add predictions from mod1 to a new dataframe
+df2 <- add_predictions(df, mod1, type="response")
+```
+
+Plots comparing gre and gpa on admittance
+```{r}
+# Predict with model 1 how gre effects admittance
+p1 <- ggplot(df2, aes(x=gre, y=pred, color=rank)) + # As gre goes up, the probability goes up
+  geom_point() +
+  geom_smooth(se=FALSE, method="lm") +
+  labs(title="Probability of admittance based on GRE score",
+       x="GRE",
+       y="Prediction")
+
+# Predict with model 1 how gpa effects admittance
+p2 <- ggplot(df2, aes(x=gpa, y=pred, color=rank)) + # As gpa goes up, the probability goes up
+  geom_point() +
+  geom_smooth(se=FALSE, method="lm") +
+  labs(title="Probability of admittance based on GPA score",
+       x="GPA",
+       y="Prediction")
+
+p1 + p2
+```
+
+Here is where I would talk about what I am seeing in these plots
